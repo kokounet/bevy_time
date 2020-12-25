@@ -19,13 +19,14 @@ use std::marker::PhantomData;
 /// assert!(stopwatch.paused());
 /// assert_eq!(stopwatch.elapsed(), 0.0);
 /// ```
-pub struct Stopwatch<T = ()> {
+#[derive(Debug, Clone)]
+pub struct Stopwatch<T: Send + Sync + 'static = ()> {
     elapsed: f32,
     paused: bool,
     marker: PhantomData<T>,
 }
 
-impl<T> Stopwatch<T> {
+impl<T: Send + Sync + 'static> Stopwatch<T> {
     /// Create a new unpaused `Stopwatch` with no elapsed time.
     ///
     /// # Examples
@@ -154,7 +155,7 @@ impl<T> Stopwatch<T> {
     }
 }
 
-impl<T> Default for Stopwatch<T> {
+impl<T: Send + Sync + 'static> Default for Stopwatch<T> {
     fn default() -> Self {
         Self {
             elapsed: Default::default(),

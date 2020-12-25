@@ -2,7 +2,8 @@ use std::time::Duration;
 
 use crate::Stopwatch;
 
-pub struct Timer<T = ()> {
+#[derive(Debug, Clone)]
+pub struct Timer<T: Send + Sync + 'static = ()> {
     stopwatch: Stopwatch<T>,
     duration: f32,
     repeating: bool,
@@ -10,7 +11,7 @@ pub struct Timer<T = ()> {
     just_finished: bool,
 }
 
-impl<T> Timer<T> {
+impl<T: Send + Sync + 'static> Timer<T> {
     /// Creates a new timer with a given duration.
     ///
     /// See also [`Timer::from_seconds`](Timer<T>::from_seconds).
@@ -298,7 +299,7 @@ impl<T> Timer<T> {
     }
 }
 
-impl<T> Default for Timer<T> {
+impl<T: Send + Sync + 'static> Default for Timer<T> {
     fn default() -> Self {
         Self {
             duration: 1.0,
