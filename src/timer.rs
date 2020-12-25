@@ -309,6 +309,9 @@ impl<T: Send + Sync + 'static> Timer<T> {
     /// Returns the number of times a repeating timer
     /// finished during the last [`tick`](Timer<T>::tick) call.
     ///
+    /// For non repeating-timers, this method will only ever
+    /// return 0 or 1.
+    ///
     /// # Examples
     /// ```
     /// # use bevy_time::*;
