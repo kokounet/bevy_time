@@ -8,7 +8,6 @@ pub struct Timer<T: Send + Sync + 'static = ()> {
     duration: f32,
     repeating: bool,
     finished: bool,
-    just_finished: bool,
     times_finished: i32,
 }
 
@@ -68,7 +67,7 @@ impl<T: Send + Sync + 'static> Timer<T> {
     /// ```
     #[inline]
     pub fn just_finished(&self) -> bool {
-        self.just_finished
+        self.times_finished > 0
     }
 
     /// Returns the elapsed time of the timer.
@@ -183,17 +182,13 @@ impl<T: Send + Sync + 'static> Timer<T> {
 
         if !self.repeating() && self.finished() {
             self.times_finished = 0;
-            self.just_finished = false;
             return self;
         }
 
         self.stopwatch.tick(delta);
-        let finished = self.elapsed() >= self.duration();
-        
-        self.finished = finished;
-        self.just_finished = finished;
+        self.finished = self.elapsed() >= self.duration();
 
-        if finished {
+        if self.finished() {
             if self.repeating() {
                 self.times_finished = (self.elapsed() / self.duration()).floor() as i32;
                 self.stopwatch.set(self.stopwatch.elapsed() % self.duration);
@@ -280,7 +275,7 @@ impl<T: Send + Sync + 'static> Timer<T> {
     pub fn reset(&mut self) {
         self.stopwatch.reset();
         self.finished = false;
-        self.just_finished = false;
+        self.times_finished = 0;
     }
 
     /// Returns the percentage of the timer elapsed time (goes from 0.0 to 1.0).
@@ -338,7 +333,6 @@ impl<T: Send + Sync + 'static> Default for Timer<T> {
             repeating: Default::default(),
             stopwatch: Default::default(),
             finished: Default::default(),
-            just_finished: Default::default(),
             times_finished: Default::default(),
         }
     }
