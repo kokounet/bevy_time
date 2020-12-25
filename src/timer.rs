@@ -9,6 +9,7 @@ pub struct Timer<T: Send + Sync + 'static = ()> {
     repeating: bool,
     finished: bool,
     just_finished: bool,
+    times_finished: i32,
 }
 
 impl<T: Send + Sync + 'static> Timer<T> {
@@ -180,18 +181,28 @@ impl<T: Send + Sync + 'static> Timer<T> {
             return self;
         }
 
-        let previous = self.finished();
+        if !self.repeating() && self.finished() {
+            self.times_finished = 0;
+            self.just_finished = false;
+            return self;
+        }
+
         self.stopwatch.tick(delta);
+        let finished = self.elapsed() >= self.duration();
+        
+        self.finished = finished;
+        self.just_finished = finished;
 
-        self.finished = self.stopwatch.elapsed() >= self.duration;
-        self.just_finished = self.finished() && !previous;
-
-        if self.finished() {
-            if self.repeating {
+        if finished {
+            if self.repeating() {
+                self.times_finished = (self.elapsed() / self.duration()).floor() as i32;
                 self.stopwatch.set(self.stopwatch.elapsed() % self.duration);
             } else {
-                self.stopwatch.set(self.duration);
+                self.times_finished = 1;
+                self.stopwatch.set(self.duration());
             }
+        } else {
+            self.times_finished = 0;
         }
 
         self
@@ -281,6 +292,7 @@ impl<T: Send + Sync + 'static> Timer<T> {
     /// timer.tick(0.5);
     /// assert_eq!(timer.percent(), 0.25);
     /// ```
+    #[inline]
     pub fn percent(&self) -> f32 {
         self.elapsed() / self.duration()
     }
@@ -294,8 +306,28 @@ impl<T: Send + Sync + 'static> Timer<T> {
     /// timer.tick(0.5);
     /// assert_eq!(timer.percent_left(), 0.75);
     /// ```
+    #[inline]
     pub fn percent_left(&self) -> f32 {
         1.0 - self.percent()
+    }
+
+    /// Returns the number of times a repeating timer
+    /// finished during the last [`tick`](Timer<T>::tick) call.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_time::*;
+    /// let mut timer: Timer<()> = Timer::from_seconds(1.0, true);
+    /// timer.tick(6.0);
+    /// assert_eq!(timer.times_finished(), 6);
+    /// timer.tick(2.0);
+    /// assert_eq!(timer.times_finished(), 2);
+    /// timer.tick(0.5);
+    /// assert_eq!(timer.times_finished(), 0);
+    /// ```
+    #[inline]
+    pub fn times_finished(&self) -> i32 {
+        self.times_finished
     }
 }
 
@@ -307,6 +339,7 @@ impl<T: Send + Sync + 'static> Default for Timer<T> {
             stopwatch: Default::default(),
             finished: Default::default(),
             just_finished: Default::default(),
+            times_finished: Default::default(),
         }
     }
 }
@@ -381,5 +414,28 @@ mod tests {
         assert_eq!(t.just_finished(), false);
         assert_eq!(t.percent(), 0.625);
         assert_eq!(t.percent_left(), 0.375);
+    }
+
+    #[test]
+    fn times_finished_repeating() {
+        let mut t: Timer<()> = Timer::from_seconds(1.0, true);
+        assert_eq!(t.times_finished(), 0);
+        t.tick(3.5);
+        assert_eq!(t.times_finished(), 3);
+        assert_eq!(t.elapsed(), 0.5);
+        assert!(t.finished());
+        assert!(t.just_finished());
+        t.tick(0.2);
+        assert_eq!(t.times_finished(), 0);
+    }
+
+    #[test]
+    fn times_finished() {
+        let mut t: Timer<()> = Timer::from_seconds(1.0, false);
+        assert_eq!(t.times_finished(), 0);
+        t.tick(1.5);
+        assert_eq!(t.times_finished(), 1);
+        t.tick(0.5);
+        assert_eq!(t.times_finished(), 0);
     }
 }
