@@ -16,7 +16,7 @@ use std::marker::PhantomData;
 /// stopwatch.tick(0.5); // paused stopwatches don't tick
 /// assert_eq!(stopwatch.elapsed(), 1.0);
 /// stopwatch.reset(); // reset the stopwatch
-/// assert!(!stopwatch.paused());
+/// assert!(stopwatch.paused());
 /// assert_eq!(stopwatch.elapsed(), 0.0);
 /// ```
 pub struct Stopwatch<T = ()> {
@@ -28,7 +28,7 @@ pub struct Stopwatch<T = ()> {
 impl<T> Stopwatch<T> {
     /// Create a new unpaused `Stopwatch` with no elapsed time.
     ///
-    /// # Example
+    /// # Examples
     /// ```
     /// # use bevy_time::*;
     /// let stopwatch: Stopwatch<()> = Stopwatch::new();
@@ -42,7 +42,7 @@ impl<T> Stopwatch<T> {
     /// Returns the elapsed time since the last [`reset`](Stopwatch<T>::reset)
     /// of the stopwatch.
     ///
-    /// # Example
+    /// # Examples
     /// ```
     /// # use bevy_time::*;
     /// let mut stopwatch: Stopwatch<()> = Stopwatch::new();
@@ -53,11 +53,25 @@ impl<T> Stopwatch<T> {
         self.elapsed
     }
 
+    /// Sets the elapsed time of the stopwatch.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_time::*;
+    /// let mut stopwatch: Stopwatch<()> = Stopwatch::new();
+    /// stopwatch.set(1.0);
+    /// assert_eq!(stopwatch.elapsed(), 1.0);
+    /// ```
+    #[inline]
+    pub fn set(&mut self, time: f32) {
+        self.elapsed = time;
+    }
+
     /// Advance the stopwatch by `delta` seconds.
     /// If the stopwatch is paused, ticking will not have any effect
     /// on elapsed time.
     ///
-    /// # Example
+    /// # Examples
     /// ```
     /// # use bevy_time::*;
     /// let mut stopwatch: Stopwatch<()> = Stopwatch::new();
@@ -84,9 +98,8 @@ impl<T> Stopwatch<T> {
     /// assert_eq!(stopwatch.elapsed(), 0.0);
     /// ```
     #[inline]
-    pub fn pause(&mut self) -> &Self {
+    pub fn pause(&mut self) {
         self.paused = true;
-        self
     }
 
     /// Unpauses the stopwatch. Resume the effect of ticking on elapsed time.
@@ -102,9 +115,8 @@ impl<T> Stopwatch<T> {
     /// assert_eq!(stopwatch.elapsed(), 1.0);
     /// ```
     #[inline]
-    pub fn unpause(&mut self) -> &Self {
+    pub fn unpause(&mut self) {
         self.paused = false;
-        self
     }
 
     /// Returns `true` if the stopwatch is paused.
@@ -133,12 +145,11 @@ impl<T> Stopwatch<T> {
     /// stopwatch.tick(1.5);
     /// stopwatch.pause();
     /// stopwatch.reset();
-    /// assert!(!stopwatch.paused());
+    /// assert!(stopwatch.paused());
     /// assert_eq!(stopwatch.elapsed(), 0.0);
     /// ```
     #[inline]
     pub fn reset(&mut self) {
-        self.unpause();
         self.elapsed = 0.0;
     }
 }
